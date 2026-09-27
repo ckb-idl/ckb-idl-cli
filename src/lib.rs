@@ -7,4 +7,6 @@
 pub mod cli;
 pub mod error;
 pub mod hash;
+pub mod idl;
+pub mod manifest;
 pub mod trailer;

@@ -22,6 +22,13 @@ pub enum CliError {
     #[error("category=invalid_document path={path:?} message={message:?}")]
     InvalidDocument { path: String, message: String },
 
+    #[error("category={category} path={path:?} message={message:?}")]
+    IdlValidation {
+        category: &'static str,
+        path: String,
+        message: String,
+    },
+
     #[error("category=invalid_trailer path= message={message:?}")]
     InvalidTrailer { message: String },
 
@@ -45,6 +52,7 @@ impl CliError {
     pub const fn category(&self) -> &'static str {
         match self {
             Self::InvalidDocument { .. } => "invalid_document",
+            Self::IdlValidation { category, .. } => category,
             Self::InvalidTrailer { .. } => "invalid_trailer",
             Self::CommitmentMismatch { .. } => "commitment_mismatch",
             Self::ManifestMismatch { .. } => "manifest_mismatch",
@@ -56,7 +64,9 @@ impl CliError {
 
     pub const fn exit_code(&self) -> i32 {
         match self {
-            Self::InvalidDocument { .. } => ExitCode::InvalidDocument as i32,
+            Self::InvalidDocument { .. } | Self::IdlValidation { .. } => {
+                ExitCode::InvalidDocument as i32
+            }
             Self::InvalidTrailer { .. } => ExitCode::InvalidTrailer as i32,
             Self::CommitmentMismatch { .. } => ExitCode::CommitmentMismatch as i32,
             Self::ManifestMismatch { .. } => ExitCode::ManifestMismatch as i32,
@@ -97,6 +107,15 @@ mod tests {
                 },
                 "invalid_trailer",
                 ExitCode::InvalidTrailer,
+            ),
+            (
+                CliError::IdlValidation {
+                    category: "unsupported_version",
+                    path: "/idl_version".into(),
+                    message: "unsupported version".into(),
+                },
+                "unsupported_version",
+                ExitCode::InvalidDocument,
             ),
             (
                 CliError::CommitmentMismatch {
@@ -156,6 +175,11 @@ mod tests {
     fn every_external_error_value_stays_in_one_record() {
         let errors = [
             CliError::InvalidTrailer {
+                message: "first line\nsecond line".into(),
+            },
+            CliError::IdlValidation {
+                category: "invalid_document",
+                path: "/interfaces\n/0".into(),
                 message: "first line\nsecond line".into(),
             },
             CliError::CommitmentMismatch {
