@@ -159,6 +159,7 @@ dependencies = [
 name = "ckb-idl-cli"
 version = "0.1.0"
 dependencies = [
+ "blake2b_simd",
  "ckb-hash",
  "ckb-idl-client",
  "clap",
