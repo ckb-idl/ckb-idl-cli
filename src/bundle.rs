@@ -2,7 +2,7 @@
 
 use std::{
     fs::{self, OpenOptions},
-    io::Write,
+    io::{self, Write},
     path::{Path, PathBuf},
 };
 
@@ -69,13 +69,48 @@ pub fn publish_bundle(
     verify_staged_bytes(&staged, contents)?;
     verify(&staged)?;
 
-    fs::rename(staging.path(), out_dir).map_err(|error| CliError::io(out_dir, error))?;
+    publish_staging_dir(staging.path(), out_dir).map_err(|error| CliError::io(out_dir, error))?;
     Ok(PublishedBundle {
         directory: out_dir.to_path_buf(),
         executable: out_dir.join(contents.executable_file),
         idl: out_dir.join(contents.idl_file),
         manifest: out_dir.join(contents.manifest_file),
     })
+}
+
+#[cfg(target_os = "linux")]
+fn publish_staging_dir(staging: &Path, out_dir: &Path) -> io::Result<()> {
+    use std::{ffi::CString, os::unix::ffi::OsStrExt};
+
+    let staging = CString::new(staging.as_os_str().as_bytes())
+        .map_err(|_| io::Error::new(io::ErrorKind::InvalidInput, "staging path contains NUL"))?;
+    let out_dir = CString::new(out_dir.as_os_str().as_bytes()).map_err(|_| {
+        io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "output directory path contains NUL",
+        )
+    })?;
+    // SAFETY: both paths are NUL-terminated C strings that remain alive through
+    // the call, and AT_FDCWD selects process-relative path resolution.
+    let result = unsafe {
+        libc::renameat2(
+            libc::AT_FDCWD,
+            staging.as_ptr(),
+            libc::AT_FDCWD,
+            out_dir.as_ptr(),
+            libc::RENAME_NOREPLACE,
+        )
+    };
+    if result == 0 {
+        Ok(())
+    } else {
+        Err(io::Error::last_os_error())
+    }
+}
+
+#[cfg(not(target_os = "linux"))]
+fn publish_staging_dir(staging: &Path, out_dir: &Path) -> io::Result<()> {
+    fs::rename(staging, out_dir)
 }
 
 fn preflight(
@@ -326,6 +361,28 @@ mod tests {
             ensure_sources_do_not_alias_destinations(&output, source, contents()),
             Err(CliError::FilesystemSafety { .. })
         ));
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn no_replace_publication_preserves_a_racing_destination() {
+        let directory = tempdir().expect("temporary directory");
+        let staging = directory.path().join("staging");
+        let output = directory.path().join("output");
+        fs::create_dir(&staging).expect("staging directory");
+        fs::write(staging.join("staged"), b"staged bundle").expect("staged member");
+        fs::create_dir(&output).expect("racing output directory");
+        fs::write(output.join("existing"), b"existing bundle").expect("existing member");
+
+        let error = super::publish_staging_dir(&staging, &output)
+            .expect_err("no-replace publication must reject existing output");
+
+        assert_eq!(error.kind(), std::io::ErrorKind::AlreadyExists);
+        assert!(staging.exists());
+        assert_eq!(
+            fs::read(output.join("existing")).expect("existing member"),
+            b"existing bundle"
+        );
     }
 
     #[test]

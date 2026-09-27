@@ -163,6 +163,7 @@ dependencies = [
  "ckb-hash",
  "ckb-idl-client",
  "clap",
+ "libc",
  "serde",
  "serde_json",
  "serde_json_canonicalizer",

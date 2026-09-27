@@ -65,7 +65,7 @@ Planned stable non-parser error codes are:
 
 ## Binding Trailer 1
 
-The future `bind` command appends exactly 46 bytes:
+The `bind` command appends exactly 46 bytes:
 
 ```text
 payload = version_u8 || flags_u8 || sha256(canonical_idl_bytes)
