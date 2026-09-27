@@ -4,6 +4,7 @@
 //! error contract. Binding, manifest, and filesystem implementations are added
 //! in their dedicated implementation phases.
 
+pub mod bundle;
 pub mod cli;
 pub mod error;
 pub mod hash;
