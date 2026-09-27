@@ -1,0 +1,21 @@
+[package]
+name = "ckb-idl-cli"
+version = "0.1.0"
+edition = "2024"
+
+[[bin]]
+name = "ckb-idl"
+path = "src/main.rs"
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+ckb-hash = "0.202"
+ckb-idl-client = { path = "../ckb-idl-client" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+serde_json_canonicalizer = "0.3.2"
+sha2 = "0.11.0"
+thiserror = "2"
+
+[dev-dependencies]
+tempfile = "3"
