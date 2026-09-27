@@ -22,19 +22,19 @@ pub enum CliError {
     #[error("category=invalid_document path={path:?} message={message:?}")]
     InvalidDocument { path: String, message: String },
 
-    #[error("category=invalid_trailer path= message={message}")]
+    #[error("category=invalid_trailer path= message={message:?}")]
     InvalidTrailer { message: String },
 
-    #[error("category=commitment_mismatch path= message={message}")]
+    #[error("category=commitment_mismatch path= message={message:?}")]
     CommitmentMismatch { message: String },
 
-    #[error("category=manifest_mismatch path={path} message={message}")]
+    #[error("category=manifest_mismatch path={path:?} message={message:?}")]
     ManifestMismatch { path: String, message: String },
 
-    #[error("category=io_error path={path} message={message}")]
+    #[error("category=io_error path={path:?} message={message:?}")]
     Io { path: PathBuf, message: String },
 
-    #[error("category=filesystem_safety path={path} message={message}")]
+    #[error("category=filesystem_safety path={path:?} message={message:?}")]
     FilesystemSafety { path: PathBuf, message: String },
 
     #[error("category=not_implemented path= message=command `{command}` is not implemented yet")]
@@ -150,5 +150,36 @@ mod tests {
         assert!(!record.contains('\n'));
         assert!(record.contains("path=\"/interfaces\\n/0\""));
         assert!(record.contains("message=\"first line\\nsecond line\""));
+    }
+
+    #[test]
+    fn every_external_error_value_stays_in_one_record() {
+        let errors = [
+            CliError::InvalidTrailer {
+                message: "first line\nsecond line".into(),
+            },
+            CliError::CommitmentMismatch {
+                message: "first line\nsecond line".into(),
+            },
+            CliError::ManifestMismatch {
+                path: "/manifest\n/hash".into(),
+                message: "first line\nsecond line".into(),
+            },
+            CliError::Io {
+                path: PathBuf::from("bundle\nexecutable"),
+                message: "first line\nsecond line".into(),
+            },
+            CliError::FilesystemSafety {
+                path: PathBuf::from("dist\nbundle"),
+                message: "first line\nsecond line".into(),
+            },
+        ];
+
+        for error in errors {
+            let record = error.to_string();
+            assert!(!record.contains('\n'), "record was split: {record:?}");
+            assert!(!record.contains('\r'), "record was split: {record:?}");
+            assert!(record.contains("\\n"));
+        }
     }
 }
