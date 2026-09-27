@@ -19,7 +19,7 @@ pub enum ExitCode {
 /// error in this type renders as one machine-readable, line-oriented record.
 #[derive(Debug, Error)]
 pub enum CliError {
-    #[error("category=invalid_document path={path} message={message}")]
+    #[error("category=invalid_document path={path:?} message={message:?}")]
     InvalidDocument { path: String, message: String },
 
     #[error("category=invalid_trailer path= message={message}")]
@@ -137,5 +137,18 @@ mod tests {
                     .starts_with(&format!("category={category}"))
             );
         }
+    }
+
+    #[test]
+    fn invalid_document_escapes_newlines_in_its_record() {
+        let error = CliError::InvalidDocument {
+            path: "/interfaces\n/0".into(),
+            message: "first line\nsecond line".into(),
+        };
+
+        let record = error.to_string();
+        assert!(!record.contains('\n'));
+        assert!(record.contains("path=\"/interfaces\\n/0\""));
+        assert!(record.contains("message=\"first line\\nsecond line\""));
     }
 }
