@@ -35,9 +35,9 @@ minify, normalize, or rewrite the IDL before hashing.
 
 <!-- ## Status
 
-The package scaffold and stable command/error contract are implemented. The
-four commands parse their documented arguments, but their operational behavior
-is intentionally not implemented yet. Calling one currently returns:
+The package scaffold, stable error contract, `validate`, and `inspect` are
+implemented. `bind` and `verify` parse their documented arguments but remain
+intentionally unimplemented. Calling either currently returns:
 
 ```text
 category=not_implemented path= message=command `<name>` is not implemented yet

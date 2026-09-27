@@ -1,8 +1,13 @@
-use std::path::PathBuf;
+use std::{fs, path::PathBuf};
 
 use clap::{Args, Parser, Subcommand};
 
-use crate::error::CliError;
+use crate::{
+    error::CliError,
+    hash::{ckb_data_hash, hex_prefixed},
+    idl::ValidatedIdl,
+    trailer::{TRAILER_PAYLOAD_LEN, parse_bound_code},
+};
 
 /// Package and verify exact-byte IDL bindings for CKB executables.
 #[derive(Debug, Parser)]
@@ -65,14 +70,37 @@ pub struct InspectArgs {
 }
 
 pub fn run(cli: Cli) -> Result<(), CliError> {
-    let command = match cli.command {
-        Command::Validate(_) => "validate",
-        Command::Bind(_) => "bind",
-        Command::Verify(_) => "verify",
-        Command::Inspect(_) => "inspect",
-    };
-
-    Err(CliError::NotImplemented { command })
+    match cli.command {
+        Command::Validate(args) => {
+            let idl = ValidatedIdl::from_path(args.idl)?;
+            println!(
+                "status=valid idl_sha256={} bytes={}",
+                hex_prefixed(idl.sha256()),
+                idl.bytes().len()
+            );
+            Ok(())
+        }
+        Command::Bind(_) => Err(CliError::NotImplemented { command: "bind" }),
+        Command::Verify(_) => Err(CliError::NotImplemented { command: "verify" }),
+        Command::Inspect(args) => {
+            let bound_code_data = fs::read(&args.executable)
+                .map_err(|error| CliError::io(&args.executable, error))?;
+            let parsed =
+                parse_bound_code(&bound_code_data).map_err(|error| CliError::InvalidTrailer {
+                    message: error.to_string(),
+                })?;
+            println!(
+                "trailer_version={} flags={} payload_length={} idl_sha256={} clean_executable_bytes={} bound_code_data_ckb_hash={}",
+                parsed.trailer.version,
+                parsed.trailer.flags,
+                TRAILER_PAYLOAD_LEN,
+                hex_prefixed(parsed.trailer.idl_sha256),
+                parsed.clean_executable.len(),
+                hex_prefixed(ckb_data_hash(&bound_code_data)),
+            );
+            Ok(())
+        }
+    }
 }
 
 #[cfg(test)]
