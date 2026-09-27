@@ -35,15 +35,9 @@ minify, normalize, or rewrite the IDL before hashing.
 
 <!-- ## Status
 
-The package scaffold, stable error contract, `validate`, and `inspect` are
-implemented. `bind` and `verify` parse their documented arguments but remain
-intentionally unimplemented. Calling either currently returns:
-
-```text
-category=not_implemented path= message=command `<name>` is not implemented yet
-```
-
-with exit code `7`.
+The package scaffold, stable error contract, `validate`, `bind`, `verify`, and
+`inspect` are implemented. Network deployment and script-registry publication
+remain intentionally out of scope.
 
 Implementation progress is tracked in
 [docs/idl-0.1.0-binding/tasks.md](docs/idl-0.1.0-binding/tasks.md). -->
