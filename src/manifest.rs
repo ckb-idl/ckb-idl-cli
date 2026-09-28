@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     error::CliError,
+    hash::{ckb_data_hash, hex_prefixed},
     trailer::{TRAILER_FLAGS, TRAILER_MAGIC, TRAILER_PAYLOAD_LEN, TRAILER_VERSION},
 };
 
@@ -103,6 +104,41 @@ impl BindingManifest {
         }
         Ok(())
     }
+
+    /// Verifies every manifest value against already-validated bundle artifacts.
+    pub fn verify_artifacts(
+        &self,
+        executable_file: &str,
+        idl_file: &str,
+        idl_sha256: [u8; 32],
+        clean_executable: &[u8],
+        bound_code_data: &[u8],
+    ) -> Result<(), CliError> {
+        self.validate()?;
+        expect("/executable_file", &self.executable_file, executable_file)?;
+        expect("/idl_file", &self.idl_file, idl_file)?;
+        expect("/idl_sha256", &self.idl_sha256, &hex_prefixed(idl_sha256))?;
+        expect(
+            "/clean_executable_ckb_hash",
+            &self.clean_executable_ckb_hash,
+            &hex_prefixed(ckb_data_hash(clean_executable)),
+        )?;
+        expect(
+            "/bound_code_data_ckb_hash",
+            &self.bound_code_data_ckb_hash,
+            &hex_prefixed(ckb_data_hash(bound_code_data)),
+        )?;
+        expect_u64(
+            "/clean_executable_bytes",
+            self.clean_executable_bytes,
+            bytes_as_u64(clean_executable.len())?,
+        )?;
+        expect_u64(
+            "/bound_code_data_bytes",
+            self.bound_code_data_bytes,
+            bytes_as_u64(bound_code_data.len())?,
+        )
+    }
 }
 
 fn expect(path: &str, actual: &str, expected: &str) -> Result<(), CliError> {
@@ -111,6 +147,18 @@ fn expect(path: &str, actual: &str, expected: &str) -> Result<(), CliError> {
     } else {
         Err(mismatch(path, format!("expected `{expected}`")))
     }
+}
+
+fn expect_u64(path: &str, actual: u64, expected: u64) -> Result<(), CliError> {
+    if actual == expected {
+        Ok(())
+    } else {
+        Err(mismatch(path, format!("expected {expected}")))
+    }
+}
+
+fn bytes_as_u64(value: usize) -> Result<u64, CliError> {
+    u64::try_from(value).map_err(|_| mismatch("", "byte count does not fit in u64"))
 }
 
 fn validate_file_name(path: &str, name: &str) -> Result<(), CliError> {

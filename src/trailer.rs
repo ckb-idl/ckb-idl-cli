@@ -126,9 +126,9 @@ pub enum ExecutableSuffix {
 
 /// Detects valid and suspicious Trailer 1-like suffixes without modifying bytes.
 ///
-/// A suffix is suspicious when it has the trailer magic, the expected trailing
-/// payload-length framing, or a 46-byte end region beginning with the supported
-/// version and flags. `bind` must accept only [`ExecutableSuffix::Clean`].
+/// A suffix is suspicious when it has the trailer magic or when its fixed
+/// version, flags, and payload-length framing all match Trailer 1. `bind` must
+/// accept only [`ExecutableSuffix::Clean`].
 pub fn classify_executable_suffix(executable: &[u8]) -> ExecutableSuffix {
     match parse_bound_code(executable) {
         Ok(parsed) => return ExecutableSuffix::ValidTrailer(parsed.trailer),
@@ -138,14 +138,13 @@ pub fn classify_executable_suffix(executable: &[u8]) -> ExecutableSuffix {
         Err(_) => {}
     }
 
-    let has_payload_length_framing = executable.len() >= 12
+    let has_trailer_framing = executable.len() >= TRAILER_LEN
+        && executable[executable.len() - TRAILER_LEN] == TRAILER_VERSION
+        && executable[executable.len() - TRAILER_LEN + 1] == TRAILER_FLAGS
         && executable[executable.len() - 12..executable.len() - 8]
             == TRAILER_PAYLOAD_LEN.to_le_bytes();
-    let has_version_and_flags = executable.len() >= TRAILER_LEN
-        && executable[executable.len() - TRAILER_LEN] == TRAILER_VERSION
-        && executable[executable.len() - TRAILER_LEN + 1] == TRAILER_FLAGS;
 
-    if has_payload_length_framing || has_version_and_flags {
+    if has_trailer_framing {
         return ExecutableSuffix::MalformedTrailerLike(TrailerError::InvalidMagic);
     }
 
@@ -255,8 +254,19 @@ mod tests {
             ExecutableSuffix::MalformedTrailerLike(TrailerError::TooShort { .. })
         ));
 
-        let mut framing_only = vec![0_u8; 12];
-        framing_only[..4].copy_from_slice(&TRAILER_PAYLOAD_LEN.to_le_bytes());
+        let mut weak_framing = vec![0_u8; TRAILER_LEN];
+        weak_framing[0] = TRAILER_VERSION;
+        weak_framing[1] = TRAILER_FLAGS;
+        assert_eq!(
+            classify_executable_suffix(&weak_framing),
+            ExecutableSuffix::Clean
+        );
+
+        let mut framing_only = vec![0_u8; TRAILER_LEN];
+        framing_only[0] = TRAILER_VERSION;
+        framing_only[1] = TRAILER_FLAGS;
+        framing_only[TRAILER_LEN - 12..TRAILER_LEN - 8]
+            .copy_from_slice(&TRAILER_PAYLOAD_LEN.to_le_bytes());
         assert!(matches!(
             classify_executable_suffix(&framing_only),
             ExecutableSuffix::MalformedTrailerLike(TrailerError::InvalidMagic)
