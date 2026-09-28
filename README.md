@@ -33,14 +33,10 @@ The IDL is a commitment input, not merely metadata. `ckb-idl` will validate
 RFC 8785 canonical bytes and hash those exact bytes; it must never prettify,
 minify, normalize, or rewrite the IDL before hashing.
 
-<!-- ## Status
+## Status
 
-The package scaffold, stable error contract, `validate`, `bind`, `verify`, and
-`inspect` are implemented. Network deployment and script-registry publication
-remain intentionally out of scope.
-
-Implementation progress is tracked in
-[docs/idl-0.1.0-binding/tasks.md](docs/idl-0.1.0-binding/tasks.md). -->
+`validate`, `bind`, `verify`, and `inspect` are implemented. Network deployment
+and script-registry publication remain outside this CLI's current scope.
 
 ## Command interface
 
@@ -53,7 +49,7 @@ ckb-idl inspect --executable <bound>
 
 Use `ckb-idl --help` for the current argument-level help.
 
-Planned stable non-parser error codes are:
+Stable non-parser error codes are:
 
 | Exit code | Category |
 |---:|---|
@@ -84,7 +80,7 @@ The IDL digest is raw SHA-256 over exact canonical IDL bytes. Bundle manifests
 will additionally record CKB-personalized data hashes for both the clean
 executable and complete bound code data.
 
-## Planned bundle
+## Bundle output
 
 For example:
 
@@ -104,7 +100,11 @@ dist/authorization-choice-lock/
 └── authorization-choice-lock.binding.json
 ```
 
-The frozen IDL will be byte-for-byte identical to the supplied IDL. Binding
+will refuse to overwrite destinations, rebind an already-bound executable, or
+silently accept malformed trailer-like input.
+The frozen IDL is byte-for-byte identical to the supplied IDL. Binding refuses
+to overwrite destinations, rebind an already-bound executable, or silently
+accept malformed trailer-like input.
 will refuse to overwrite destinations, rebind an already-bound executable, or
 silently accept malformed trailer-like input.
 
@@ -120,9 +120,3 @@ cargo clippy --all-targets -- -D warnings
 cargo test
 cargo run --bin ckb-idl -- --help
 ```
-
-## Design documents
-
-- [Requirements](docs/idl-0.1.0-binding/requirements.md)
-- [Design](docs/idl-0.1.0-binding/design.md)
-- [Implementation tasks](docs/idl-0.1.0-binding/tasks.md)
