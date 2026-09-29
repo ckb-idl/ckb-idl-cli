@@ -113,25 +113,25 @@ mod tests {
     const CANONICAL_FIXTURES: [(&[u8], &str); 4] = [
         (
             include_bytes!(
-                "../../ckb-idl-client/tests/fixtures/idl-0.1.0/examples/flat-witness.json"
+                "../tests/examples/flat-witness.json"
             ),
             "0xaab089aa382452a21c4850db078af67f3d3294844f87c36735c3684d27c6920d",
         ),
         (
             include_bytes!(
-                "../../ckb-idl-client/tests/fixtures/idl-0.1.0/examples/nested-witness.json"
+                "../tests/examples/nested-witness.json"
             ),
             "0x055af6c7264b6cca58d61ef7185f2f28369af44937edbabe818445e8b5c55fc0",
         ),
         (
             include_bytes!(
-                "../../ckb-idl-client/tests/fixtures/idl-0.1.0/examples/typed-vector.json"
+                "../tests/examples/typed-vector.json"
             ),
             "0x33ad2b8b18a6b1a2cf4de18cc0c5282d494ae61dfc903a17bc6fc41a59cd45d4",
         ),
         (
             include_bytes!(
-                "../../ckb-idl-client/tests/fixtures/idl-0.1.0/examples/union-witness.json"
+                "../tests/examples/union-witness.json"
             ),
             "0xe027eb19bf5478aced236b537cf6a823156443991ed12c102b1281376eb71ad2",
         ),
