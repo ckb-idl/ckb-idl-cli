@@ -100,13 +100,9 @@ dist/authorization-choice-lock/
 └── authorization-choice-lock.binding.json
 ```
 
-will refuse to overwrite destinations, rebind an already-bound executable, or
-silently accept malformed trailer-like input.
 The frozen IDL is byte-for-byte identical to the supplied IDL. Binding refuses
 to overwrite destinations, rebind an already-bound executable, or silently
 accept malformed trailer-like input.
-will refuse to overwrite destinations, rebind an already-bound executable, or
-silently accept malformed trailer-like input.
 
 ## Development
 
