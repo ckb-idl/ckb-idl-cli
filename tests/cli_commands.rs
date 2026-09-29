@@ -6,8 +6,7 @@ use ckb_idl_cli::{
 };
 use tempfile::tempdir;
 
-const FLAT_IDL: &[u8] =
-    include_bytes!("./examples/flat-witness.json");
+const FLAT_IDL: &[u8] = include_bytes!("./examples/flat-witness.json");
 
 fn command() -> Command {
     Command::new(env!("CARGO_BIN_EXE_ckb-idl"))
